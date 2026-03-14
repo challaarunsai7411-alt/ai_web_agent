@@ -1,0 +1,20 @@
+# datasets
+data/
+datasets/
+
+# models
+*.pt
+*.pth
+*.h5
+*.pkl
+
+# python
+__pycache__/
+*.pyc
+
+# env
+venv/
+.env
+
+# mac
+.DS_Store
