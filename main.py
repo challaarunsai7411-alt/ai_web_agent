@@ -11,27 +11,35 @@ from memory.task_memory import TaskMemory
 from agent.planner import TaskPlanner
 from perception.vision_parser import VisionParser
 from utils.speaker import AgentSpeaker
+from utils.listener import AgentListener
 
 async def main():
     print("Initializing Autonomous Web Agent...\n")
     
-    # What we want the agent to do
-    objective = "Type 'Computer Science' into the search bar, submit the search, and click on the first article link in the results."
-    print(f"🎯 OBJECTIVE: {objective}\n")
-
     # Initialize all components exactly once
     memory = TaskMemory() 
     planner = TaskPlanner()
     speaker = AgentSpeaker()
+    listener = AgentListener()
     # vision_parser = VisionParser() # <-- Vision disabled for Groq
     browser_ctrl = BrowserController(headless=False)
     parser = AccessibilityParser()
     compressor = DOMCompressor()
     decision_engine = DecisionEngine()
 
+    speaker.speak("I am ready. What would you like me to do on Wikipedia?")
+    objective = listener.listen_for_objective()
+    
+    # 3. FALLBACK IF THE MIC FAILS
+    if "Error" in objective:
+        speaker.speak("I didn't catch that, so I will search for Computer Science instead.")
+        objective = "Type 'Computer Science' into the search bar, submit the search, and click on the first article link in the results."
+        
+    print(f"🎯 OBJECTIVE: {objective}\n")
+    
     # --- SPEAKER 1: Announce planning phase ---
     print("📝 Generating strategic plan...")
-    speaker.speak("I am generating a plan for your request.")
+
     
     plan = await planner.generate_plan(objective)
     
@@ -92,7 +100,7 @@ async def main():
             # -------------------------------------------------------
 
             # 3. Act
-            is_done = await executor.execute(next_action)
+            is_done = await executor.execute(next_action, speaker=speaker) # <-- Added 'speaker' parameter
             
             # 4. Remember
             memory.add_action(step + 1, next_action)
